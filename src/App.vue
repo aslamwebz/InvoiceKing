@@ -53,17 +53,19 @@
                     <h2 class="text-lg font-semibold text-gray-800 mb-2">Bill To</h2>
                     <input type="text" v-model="invoice.billTo.name" placeholder="Client Name" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500">
                     <input type="email" v-model="invoice.billTo.email" placeholder="Email Address" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500">
-                    <textarea v-model="invoice.billTo.address" placeholder="Client Address" rows="3" class="w-full p-2 border rounded-md focus:ring-1 focus:ring-indigo-500"></textarea>
+                    <input type="number" v-model.number="invoice.billTo.phone" placeholder="Phone Number" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500" @keypress="preventNonNumericInput">
+                    <textarea v-model="invoice.billTo.address" placeholder="Client Address" rows="2" class="w-full p-2 border rounded-md focus:ring-1 focus:ring-indigo-500"></textarea>
                 </div>
                 <!-- Ship To Section -->
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-lg font-semibold text-gray-800">Ship To</h2>
-                         <button @click="copyBillingAddress" class="text-sm font-medium text-indigo-600 hover:text-indigo-800">Same as Bill To</button>
+                        <button type="button" @click="copyBillingAddress" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 focus:outline-none">Same as Bill To</button>
                     </div>
                     <input type="text" v-model="invoice.shipTo.name" placeholder="Client Name" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500">
                     <input type="email" v-model="invoice.shipTo.email" placeholder="Email Address" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500">
-                    <textarea v-model="invoice.shipTo.address" placeholder="Shipping Address" rows="3" class="w-full p-2 border rounded-md focus:ring-1 focus:ring-indigo-500"></textarea>
+                    <input type="number" v-model.number="invoice.shipTo.phone" placeholder="Phone Number" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500" @keypress="preventNonNumericInput">
+                    <textarea v-model="invoice.shipTo.address" placeholder="Shipping Address" rows="2" class="w-full p-2 border rounded-md focus:ring-1 focus:ring-indigo-500"></textarea>
                 </div>
             </div>
 
@@ -77,13 +79,14 @@
                     <input type="text" v-model="invoice.company.name" placeholder="Your Company Name" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500">
                      <input type="email" v-model="invoice.company.email" placeholder="Your Email" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500">
                     <textarea v-model="invoice.company.address" placeholder="Your Company Address" rows="3" class="w-full p-2 border rounded-md focus:ring-1 focus:ring-indigo-500"></textarea>
+                    <input type="number" v-model.number="invoice.company.phone" placeholder="Phone Number" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500" @keypress="preventNonNumericInput">
                 </div>
                 <!-- Invoice Information Section -->
                 <div>
                     <h2 class="text-lg font-semibold text-gray-800 mb-2">Invoice Information</h2>
                     <input type="text" v-model="invoice.invoiceNumber" placeholder="Invoice Number" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500">
-                    <input type="date" v-model="invoice.invoiceDate" title="Invoice Date" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500">
-                    <input type="date" v-model="invoice.dueDate" title="Due Date" class="w-full p-2 border rounded-md focus:ring-1 focus:ring-indigo-500">
+                    <input type="date" v-model="invoice.invoiceDate" class="w-full p-2 border rounded-md mb-2 focus:ring-1 focus:ring-indigo-500">
+                    <input type="date" v-model="invoice.dueDate" class="w-full p-2 border rounded-md focus:ring-1 focus:ring-indigo-500">
                 </div>
             </div>
 
@@ -323,12 +326,20 @@ const getTemplateComponent = (templateId) => {
 const previewData = computed(() => ({
     billTo: { 
         name: invoice.billTo.name || 'Client Name', 
-        email: invoice.billTo.email || 'client@example.com', 
+        email: invoice.billTo.email || 'client@example.com',
+        phone: invoice.billTo.phone || '(123) 456-7890',
         address: invoice.billTo.address || '123 Client St\nCity, Country' 
+    },
+    shipTo: { 
+        name: invoice.shipTo.name || invoice.billTo.name || 'Client Name',
+        email: invoice.shipTo.email || invoice.billTo.email || 'client@example.com',
+        phone: invoice.shipTo.phone || invoice.billTo.phone || '(123) 456-7890',
+        address: invoice.shipTo.address || invoice.billTo.address || '123 Shipping St\nCity, Country'
     },
     invoice: { 
         number: invoice.invoiceNumber || 'INV-0001', 
-        date: invoice.invoiceDate ? new Date(invoice.invoiceDate) : new Date() 
+        date: invoice.invoiceDate ? new Date(invoice.invoiceDate) : new Date(),
+        paymentDate: invoice.dueDate ? new Date(invoice.dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     },
     yourCompany: { 
         name: invoice.company.name || 'Your Company', 
@@ -548,7 +559,34 @@ const removeItem = (index) => {
 
 // Copies the billing address to the shipping address
 const copyBillingAddress = () => {
-    invoice.shipTo = structuredClone(invoice.billTo);
+    // Create a deep copy of billTo to avoid reference issues
+    const billToCopy = JSON.parse(JSON.stringify(invoice.billTo));
+    
+    // Update shipTo with all billTo fields
+    invoice.shipTo = {
+        ...billToCopy,
+        // Preserve any shipTo-specific fields that aren't in billTo
+        ...Object.fromEntries(
+            Object.entries(invoice.shipTo || {})
+                .filter(([key]) => !(key in billToCopy))
+        )
+    };
+};
+
+// Prevent non-numeric input for phone numbers
+const preventNonNumericInput = (e) => {
+    // Allow: backspace, delete, tab, escape, enter, decimal point, and numbers
+    if ([8, 9, 27, 13, 110, 190].includes(e.keyCode) || 
+        // Allow: Ctrl+A, Ctrl+C, Ctrl+X, Ctrl+V
+        (e.ctrlKey === true && [65, 67, 88, 86].includes(e.keyCode)) ||
+        // Allow: home, end, left, right
+        (e.keyCode >= 35 && e.keyCode <= 39)) {
+        return;
+    }
+    // Ensure that it is a number and stop the keypress
+    if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault();
+    }
 };
 
 // --- COMPUTED PROPERTIES ---

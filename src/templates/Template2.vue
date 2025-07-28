@@ -14,8 +14,8 @@
           <h2 class="text-2xl font-bold text-cyan-700 mb-2">TAX INVOICE</h2>
           <div class="space-y-1">
             <p class="text-gray-700"><span class="font-medium">#{{ invoice.number || '0001' }}</span></p>
-            <p class="text-gray-600 text-sm">Date: {{ invoice.date || '2023-01-01' }}</p>
-            <p class="text-gray-600 text-sm">Due: {{ invoice.paymentDate || '2023-01-15' }}</p>
+            <p class="text-gray-600 text-sm">Date: {{ formatDate(invoice.date) || '2023-01-01' }}</p>
+            <p class="text-gray-600 text-sm">Due: {{ formatDate(invoice.paymentDate) || '2023-01-15' }}</p>
           </div>
         </div>
       </div>
@@ -126,7 +126,13 @@ export default {
     selectedCurrency() { return this.data.selectedCurrency || 'USD'; }
   },
   methods: {
-    formatCurrency
+    formatCurrency,
+    formatDate(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return date;
+      return d.toISOString().split('T')[0];
+    }
   }
 };
 </script>

@@ -13,8 +13,8 @@
           <h2 class="text-3xl font-bold text-gray-800 mb-2">INVOICE</h2>
           <div class="space-y-1">
             <p class="text-gray-700"><span class="font-medium">#{{ invoice.number || '0001' }}</span></p>
-            <p class="text-gray-600 text-sm">Date: {{ invoice.date || '2023-01-01' }}</p>
-            <p class="text-gray-600 text-sm">Due: {{ invoice.paymentDate || '2023-01-15' }}</p>
+            <p class="text-gray-600 text-sm">Date: {{ formatDate(invoice.date) || '2023-01-01' }}</p>
+            <p class="text-gray-600 text-sm">Due: {{ formatDate(invoice.paymentDate) || '2023-01-15' }}</p>
           </div>
         </div>
       </div>
@@ -25,14 +25,14 @@
           <h3 class="text-base font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-200">Bill To:</h3>
           <p class="font-medium text-gray-800">{{ billTo.name || 'Client Name' }}</p>
           <p class="text-gray-600 text-sm">{{ billTo.address || '123 Client St, City' }}</p>
-          <p class="text-gray-600 text-sm">{{ billTo.phone || '+1 (123) 456-7890' }}</p>
-          <p class="text-gray-600 text-sm">{{ billTo.email || 'client@example.com' }}</p>
+          <p v-if="billTo.phone" class="text-gray-600 text-sm">{{ billTo.phone }}</p>
+          <p v-if="billTo.email" class="text-gray-600 text-sm">{{ billTo.email }}</p>
         </div>
         <div class="w-1/2 pl-6">
           <h3 class="text-base font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-200">Ship To:</h3>
-          <p class="font-medium text-gray-800">{{ shipTo.name || 'Client Name' }}</p>
-          <p class="text-gray-600 text-sm">{{ shipTo.address || '123 Shipping St, City' }}</p>
-          <p class="text-gray-600 text-sm">{{ shipTo.phone || '+1 (123) 456-7890' }}</p>
+          <p class="font-medium text-gray-800">{{ shipTo.name || billTo.name || 'Client Name' }}</p>
+          <p class="text-gray-600 text-sm">{{ shipTo.address || billTo.address || '123 Shipping St, City' }}</p>
+          <p v-if="shipTo.phone || billTo.phone" class="text-gray-600 text-sm">{{ shipTo.phone || billTo.phone }}</p>
         </div>
       </div>
 
@@ -126,7 +126,16 @@ export default {
     selectedCurrency() { return this.data.selectedCurrency || 'USD'; }
   },
   methods: {
-    formatCurrency
+    formatCurrency,
+    formatDate(date) {
+      if (!date) return '';
+      // If it's a Date object or can be converted to one
+      const d = new Date(date);
+      // Check if date is valid
+      if (isNaN(d.getTime())) return date; // Return as is if invalid date
+      // Format as YYYY-MM-DD
+      return d.toISOString().split('T')[0];
+    }
   }
 };
 </script>

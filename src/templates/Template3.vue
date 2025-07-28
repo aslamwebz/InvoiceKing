@@ -29,8 +29,8 @@
         </div>
         <div class="text-right">
           <p>Invoice #: {{ invoice.number }}</p>
-          <p>Invoice Date: {{ invoice.date }}</p>
-          <p>Due Date: {{ invoice.paymentDate }}</p>
+          <p>Invoice Date: {{ formatDate(invoice.date) }}</p>
+          <p>Due Date: {{ formatDate(invoice.paymentDate) }}</p>
           <p>Due Amount: {{ formatCurrency(grandTotal, selectedCurrency) }}</p>
         </div>
       </div>
@@ -113,7 +113,13 @@ export default {
     selectedCurrency() { return this.data.selectedCurrency || 'USD'; }
   },
   methods: {
-    formatCurrency
+    formatCurrency,
+    formatDate(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return date;
+      return d.toISOString().split('T')[0];
+    }
   }
 };
 </script>
