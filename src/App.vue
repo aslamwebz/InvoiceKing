@@ -159,19 +159,41 @@
             <div class="bg-white p-6 rounded-xl shadow-lg sticky top-8">
                 <h2 class="text-xl font-bold text-gray-800 mb-4">{{ activeTab === 'invoice' ? 'Invoice' : 'Receipt' }} Templates</h2>
                 <div class="grid grid-cols-2 gap-4">
-                    <!-- Template Thumbnails -->
-                    <div v-for="template in (activeTab === 'invoice' ? [1, 2, 3, 4, 5] : [6, 7, 8, 9])" 
-                         :key="template" 
-                         @click="openTemplatePreview(template)"
-                         class="border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                         :class="{ 'ring-2 ring-indigo-500': selectedTemplate === template }">
-                        <div class="h-32 bg-gray-100 flex items-center justify-center">
-                            <span class="text-gray-400">{{ activeTab === 'invoice' ? 'Invoice' : 'Receipt' }} {{ activeTab === 'invoice' ? template : template - 5 }}</span>
+                    <!-- Invoice Templates -->
+                    <template v-if="activeTab === 'invoice'">
+                        <div v-for="template in [1, 2, 3, 4, 5]" 
+                             :key="template" 
+                             @click="openTemplatePreview(template)"
+                             class="border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow group"
+                             :class="{ 'ring-2 ring-indigo-500': selectedTemplate === template }">
+                            <div class="h-32 bg-gray-100 overflow-hidden">
+                                <img :src="`/img/Invoice_new (${template}).png`" 
+                                     :alt="'Invoice Template ' + template"
+                                     class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                            </div>
+                            <div class="p-2 text-center">
+                                <h3 class="font-medium text-sm">{{ getTemplateName(template) }}</h3>
+                            </div>
                         </div>
-                        <div class="p-2 text-center">
-                            <h3 class="font-medium text-sm">{{ getTemplateName(template) }}</h3>
+                    </template>
+                    
+                    <!-- Receipt Templates -->
+                    <template v-else>
+                        <div v-for="template in [6, 7, 8, 9]" 
+                             :key="template" 
+                             @click="openTemplatePreview(template)"
+                             class="border rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition-shadow group"
+                             :class="{ 'ring-2 ring-indigo-500': selectedTemplate === template }">
+                            <div class="h-32 bg-gray-100 overflow-hidden">
+                                <img :src="`/img/Receipt_new (${template - 5}).png`" 
+                                     :alt="'Receipt Template ' + (template - 5)"
+                                     class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                            </div>
+                            <div class="p-2 text-center">
+                                <h3 class="font-medium text-sm">{{ getTemplateName(template) }}</h3>
+                            </div>
                         </div>
-                    </div>
+                    </template>
                 </div>
                 
                 <!-- Download Buttons -->
