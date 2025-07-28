@@ -145,6 +145,13 @@
                 <h2 class="text-lg font-semibold text-gray-800 mb-2">Notes</h2>
                 <textarea v-model="invoice.notes" placeholder="Thank you for your business." rows="3" class="w-full p-2 border rounded-md focus:ring-1 focus:ring-indigo-500"></textarea>
             </div>
+
+            <!-- Hidden PDF Content (for PDF generation) -->
+            <div class="hidden">
+                <div id="pdf-content" class="bg-white p-8" style="width: 794px; height: 1123px; box-sizing: border-box;">
+                    <component :is="getTemplateComponent(selectedTemplate)" :data="previewData" />
+                </div>
+            </div>
         </div>
 
         <!-- Right Side: Template Gallery -->
@@ -212,8 +219,7 @@
 
 <script setup>
 import { ref, reactive, computed, defineAsyncComponent, onMounted } from 'vue';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import html2pdf from 'html2pdf.js';
 
 // Import all template components
 const Template1 = defineAsyncComponent(() => import('./templates/Template1.vue'));
@@ -430,6 +436,9 @@ const formatCurrency = (amount) => {
 
 // Downloads the current invoice/receipt as PDF
 const downloadPDF = async () => {
+  let button = null;
+  let originalText = 'Download PDF';
+  
   try {
     const element = document.getElementById('pdf-content');
     if (!element) {
@@ -438,52 +447,69 @@ const downloadPDF = async () => {
     }
 
     // Show loading state
-    const button = document.querySelector('button[onclick*="downloadPDF"]');
-    const originalText = button?.innerHTML || 'Download PDF';
+    button = document.querySelector('button[onclick*="downloadPDF"]');
+    originalText = button?.innerHTML || 'Download PDF';
     if (button) {
       button.disabled = true;
       button.innerHTML = 'Generating PDF...';
     }
 
-    // Create PDF
-    const canvas = await html2canvas(element, {
-      scale: 2, // Higher quality
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-    });
+    const pdfElement = document.getElementById('pdf-content');
+    if (!pdfElement) {
+      console.error('Could not find pdf-content element');
+      return;
+    }
 
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-    });
-
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    // Create a clone of the element to avoid affecting the original
+    const elementClone = pdfElement.cloneNode(true);
+    document.body.appendChild(elementClone);
     
-    // Save the PDF
-    const fileName = `${activeTab.value === 'invoice' ? 'Invoice' : 'Receipt'}_${invoice.number || 'new'}.pdf`;
-    pdf.save(fileName);
+    try {
+      // PDF generation with minimal margins
+      const opt = {
+        margin: [10, 5, 0, 5], // [top, right, bottom, left] in mm - 0 bottom margin
+        filename: `${activeTab.value === 'invoice' ? 'Invoice' : 'Receipt'}_${invoice.number || 'new'}.pdf`,
+        image: { 
+          type: 'jpeg', 
+          quality: 0.98 
+        },
+        html2canvas: { 
+          scale: 2, // Higher scale for better quality
+          useCORS: true,
+          logging: true,
+          backgroundColor: '#ffffff',
+          allowTaint: true,
+          windowWidth: 794, // A4 width in pixels at 96dpi
+          width: 794
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait',
+          hotfixes: ['px_scaling']
+        }
+      };
 
-    // Reset button state
-    if (button) {
-      button.disabled = false;
-      button.innerHTML = originalText;
+      // Generate and save the PDF
+      await html2pdf()
+        .set(opt)
+        .from(elementClone)
+        .save();
+      
+      // Clean up
+      document.body.removeChild(elementClone);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Clean up even if there's an error
+      if (elementClone && document.body.contains(elementClone)) {
+        document.body.removeChild(elementClone);
+      }
+      throw error; // Re-throw to be caught by the outer catch
     }
   } catch (error) {
     console.error('Error generating PDF:', error);
     alert('Error generating PDF. Please try again.');
-    
-    // Reset button state on error
-    const button = document.querySelector('button[onclick*="downloadPDF"]');
-    if (button) {
-      button.disabled = false;
-      button.innerHTML = 'Download PDF';
-    }
   }
 };
 
