@@ -445,16 +445,17 @@ const downloadImage = async (format = 'png') => {
             return;
         }
 
-        // Create a container for the clone
+        // Create a container for the clone with zero size and hidden
         const container = document.createElement('div');
         container.style.position = 'fixed';
-        container.style.left = '0';
+        container.style.left = '-9999px';
         container.style.top = '0';
-        container.style.width = '100%';
-        container.style.height = '100%';
-        container.style.overflow = 'visible';
-        container.style.zIndex = '9999';
+        container.style.width = '1px';
+        container.style.height = '1px';
+        container.style.overflow = 'hidden';
+        container.style.opacity = '0';
         container.style.pointerEvents = 'none';
+        container.style.visibility = 'hidden';
 
         // Create a clone of the element
         const elementClone = pdfElement.cloneNode(true);
@@ -469,6 +470,7 @@ const downloadImage = async (format = 'png') => {
         elementClone.style.transform = 'scale(1)';
         elementClone.style.transformOrigin = '0 0';
         elementClone.style.boxSizing = 'border-box';
+        elementClone.style.visibility = 'visible';
         
         // Hide interactive elements
         const elementsToHide = elementClone.querySelectorAll('button, a, input, select, textarea, .no-print');
@@ -483,7 +485,7 @@ const downloadImage = async (format = 'png') => {
         document.body.appendChild(container);
         
         // Force a reflow to ensure the element is rendered
-        void container.offsetHeight;
+        void elementClone.offsetHeight;
         
         // Use html2canvas to capture the element with PDF dimensions
         const canvas = await html2canvas(elementClone, {
