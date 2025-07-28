@@ -174,14 +174,44 @@
                     </div>
                 </div>
                 
-                <!-- Download PDF Button -->
-                <button @click="downloadPDF" 
-                        class="mt-8 w-full px-4 py-3 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Download PDF
-                </button>
+                <!-- Download Buttons -->
+                <div class="mt-8 flex flex-col space-y-4">
+                    <!-- PDF Download Button -->
+                    <button @click="downloadPDF" 
+                            class="w-full px-4 py-3 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download PDF
+                    </button>
+                    
+                    <!-- Image Download Dropdown -->
+                    <div class="relative w-full">
+                        <div class="group">
+                            <button class="w-full px-4 py-3 bg-green-600 text-white font-bold rounded-md hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Download Image
+                                <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="absolute left-0 right-0 mt-1 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ease-in-out z-10">
+                                <div class="py-1">
+                                    <button @click="downloadImage('png')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                                        <span class="mr-2">PNG</span>
+                                        <span class="text-xs text-gray-400">(High Quality)</span>
+                                    </button>
+                                    <button @click="downloadImage('jpeg')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                                        <span class="mr-2">JPEG</span>
+                                        <span class="text-xs text-gray-400">(Smaller File)</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <!-- Template Preview Modal -->
@@ -220,6 +250,7 @@
 <script setup>
 import { ref, reactive, computed, defineAsyncComponent, onMounted } from 'vue';
 import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas';
 
 // Import all template components
 const Template1 = defineAsyncComponent(() => import('./templates/Template1.vue'));
@@ -369,6 +400,117 @@ function getTemplateName(templateId) {
     const template = templates.value.find(t => t.id === templateId);
     return template ? template.name : '';
 }
+
+// --- DOWNLOAD METHODS ---
+
+// Downloads the current invoice/receipt as an image
+const downloadImage = async (format = 'png') => {
+    try {
+        const pdfElement = document.getElementById('pdf-content');
+        if (!pdfElement) {
+            console.error('Could not find pdf-content element');
+            return;
+        }
+
+        // Create a container for the clone
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '0';
+        container.style.top = '0';
+        container.style.width = '100%';
+        container.style.height = '100%';
+        container.style.overflow = 'visible';
+        container.style.zIndex = '9999';
+        container.style.pointerEvents = 'none';
+
+        // Create a clone of the element
+        const elementClone = pdfElement.cloneNode(true);
+        
+        // Style the clone to match PDF settings
+        elementClone.style.position = 'absolute';
+        elementClone.style.left = '0';
+        elementClone.style.top = '0';
+        elementClone.style.width = '794px';
+        elementClone.style.padding = '30px 40px';
+        elementClone.style.backgroundColor = '#ffffff';
+        elementClone.style.transform = 'scale(1)';
+        elementClone.style.transformOrigin = '0 0';
+        elementClone.style.boxSizing = 'border-box';
+        
+        // Hide interactive elements
+        const elementsToHide = elementClone.querySelectorAll('button, a, input, select, textarea, .no-print');
+        elementsToHide.forEach(el => {
+            el.style.display = 'none';
+        });
+
+        // Add the clone to the container
+        container.appendChild(elementClone);
+        
+        // Add the container to the body
+        document.body.appendChild(container);
+        
+        // Force a reflow to ensure the element is rendered
+        void container.offsetHeight;
+        
+        // Use html2canvas to capture the element with PDF dimensions
+        const canvas = await html2canvas(elementClone, {
+            scale: 1, // Use scale 1 to prevent any scaling issues
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            allowTaint: true,
+            logging: true,
+            scrollX: 0,
+            scrollY: -window.scrollY,
+            width: elementClone.scrollWidth,
+            height: elementClone.scrollHeight,
+            windowWidth: elementClone.scrollWidth,
+            windowHeight: elementClone.scrollHeight,
+            x: 0,
+            y: 0,
+            scrollX: 0,
+            scrollY: 0,
+            onclone: (clonedDoc) => {
+                // Add styles to ensure proper rendering
+                const style = document.createElement('style');
+                style.textContent = `
+                    @page { margin: 0; }
+                    body { margin: 0; padding: 0; }
+                    #pdf-content { 
+                        width: 794px !important; 
+                        max-width: 794px !important;
+                        box-shadow: none !important;
+                    }
+                `;
+                clonedDoc.head.appendChild(style);
+            }
+        });
+
+        // Create download link
+        const link = document.createElement('a');
+        const url = canvas.toDataURL(`image/${format}`, 1.0);
+        
+        link.download = `${activeTab.value === 'invoice' ? 'Invoice' : 'Receipt'}_${invoice.number || 'new'}.${format}`;
+        link.href = url;
+        
+        // Clean up
+        if (container.parentNode) {
+            container.parentNode.removeChild(container);
+        }
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+            if (link.parentNode) {
+                link.parentNode.removeChild(link);
+            }
+        }, 100);
+        
+    } catch (error) {
+        console.error('Error generating image:', error);
+        alert('Failed to generate image. Please try again.');
+    }
+};
 
 // --- INVOICE METHODS ---
 

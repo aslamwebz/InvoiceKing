@@ -1,6 +1,6 @@
 <template>
   <BaseTemplate :data="data">
-    <div id="pdf-content" style="background: white; width: 210mm; min-height: 297mm; padding: 10mm 8mm 0 8mm; margin: 0 auto; box-sizing: border-box; position: relative;">
+    <div id="pdf-content" style="background: white; width: 794px; min-height: 1123px; padding: 20px 30px; margin: 0 auto; box-sizing: border-box; position: relative; overflow: hidden;">
       <!-- Header Section -->
       <div class="flex justify-between items-start mb-12">
         <div class="w-1/2">
